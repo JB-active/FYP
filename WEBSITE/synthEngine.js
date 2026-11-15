@@ -1,3 +1,5 @@
+// 1. CORE SYNTH ENGNINE
+
 const SynthEngine = {
     synth: null,
     activeNumber: null, // Tracks what is currently playing to prevent audio flickering
@@ -83,3 +85,30 @@ const SynthEngine = {
         }
     }
 };
+
+
+// 2. PROGRESSION PLAYBACK SEQUENCER
+
+const ProgressionSequencer = {
+    sequence: null,
+    isPlaying: false,
+
+    parseProgression(inputString) {
+        return inputString
+        .replace(/\s+/g, '')
+        .trim()
+        .split(/\s+/)
+        .map(Number)
+        .filter(n => n >= 1 && n <= 7);
+    },
+
+    start(progressionString, musicalKey, bpm, timeSignature) {
+        this.stop(); // Stops any existing sequence before starting a new one
+
+        const progression = this.parseProgression(progressionString);
+        if (progression.length === 0) {
+            console.error("Please enter a valid progression (e.g. 6 4 1 5)");
+            return;
+        }
+    }
+}
