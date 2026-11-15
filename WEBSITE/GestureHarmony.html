@@ -5,43 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GestureHarmony MVP</title>
-    <style>
-        /* Intentionally bland CSS with zero aesthetic polish so that it can be later improved*/
-        body {
-            font-family: "Times New Roman", Times, serif; 
-            background-color: #ffffff;
-            color: #000000;
-            padding: 20px;
-        }
-        .container {
-            border: 2px solid #000;
-            width: 600px;
-            padding: 10px;
-        }
-        .controls {
-            margin-bottom: 20px;
-        }
-        .video-feed {
-            width: 480px;
-            height: 360px;
-            background-color: #cccccc; /*  gray placeholder */
-            border: 1px solid #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        .output-box {
-            border: 1px dashed #666;
-            padding: 10px;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-        button {
-            padding: 5px 10px;
-            font-size: 16px;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -58,17 +22,42 @@
             <button id="startBtn">Enable Camera & Audio</button>
         </div>
 
-        <div class="video-feed">
+        <div class="video_feed">
             [ Webcam Video Feed Placeholder ]
         </div>
 
-        <div class="output-box">
+        <div class="output_box">
             <strong>Fingers Detected:</strong> <span id="fingerCount">0</span>
         </div>
 
-        <div class="output-box">
+        <div class="output_box">
             <strong>Active Chord (NNS):</strong> <span id="chordOutput">None</span>
         </div>
+    </div>
+
+    <div class="controls">
+        <h3>Progression Playback</h3>
+
+        <div>
+            <label for="progressionInput">Type the Progression: </label>
+            <input type="text" id="progressionInput" placeholder="e.g., 6 4 1 5">
+        </div>
+
+        <div>
+            <label for="bpmInput">Tempo (BPM): </label>
+            <input type="number" id="bpmInput" value="120" min="40" max="240"> /* Setting a default BPM value, minimum and maximum values for the bpm value*/
+
+            <label for="timeSigSelect">Time Signature: </label>
+            <select id="timeSigSelect">
+                <option value="4/4">4/4</option>
+                <option value="3/4">3/4</option>
+                <option value="6/8">6/8</option>
+            </select>
+        </div>
+
+        <div>
+            <button id="playProgressionBtn">Play Progression</button>
+            <button id="stopProgressionBtn">Stop Progression</button>
     </div>
 
 </body>
