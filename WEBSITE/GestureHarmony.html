@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <script src="synthEngine.js"></script>
 
     <div class="container">
         <h1>GestureHarmony Test Build</h1>
@@ -47,7 +45,7 @@
 
         <div>
             <label for="bpmInput">Tempo (BPM): </label>
-            <input type="number" id="bpmInput" value="120" min="40" max="240"> /* Setting a default BPM value, minimum and maximum values for the bpm value*/
+            <input type="number" id="bpmInput" value="120" min="40" max="240">  <!--Setting a default BPM value, minimum and maximum values for the bpm value-->
 
             <label for="timeSigSelect">Time Signature: </label>
             <select id="timeSigSelect">
@@ -60,7 +58,11 @@
         <div>
             <button id="playProgressionBtn">Play Progression</button>
             <button id="stopProgressionBtn">Stop Progression</button>
+        </div>
     </div>
 
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script> <!--loading Tone.js-->
+    <script src="synthEngine.js"></script>
 </body>
 </html>
