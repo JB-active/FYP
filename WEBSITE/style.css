@@ -13,7 +13,7 @@ body {
 .controls {
     margin-bottom: 20px;
 }
-.video-feed {
+.video_feed {
     width: 480px;
     height: 360px;
     background-color: #cccccc; /*  gray placeholder */
@@ -23,7 +23,7 @@ body {
     justify-content: center;
     margin-bottom: 20px;
 }
-.output-box {
+.output_box {
     border: 1px dashed #666;
     padding: 10px;
     margin-bottom: 10px;
