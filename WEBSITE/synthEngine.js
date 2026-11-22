@@ -1,21 +1,19 @@
-// 1. CORE SYNTH ENGNINE
+
+// 1. CORE SYNTH ENGINE
 
 const SynthEngine = {
     synth: null,
-    activeNumber: null, // Tracks what is currently playing to prevent audio flickering
+    activeNumber: null,
 
-    // A dictionary mapping the Nashville Number System to absolute pitches
-    // mapped to 1 through 7
-    // Each key has its own set of chords
     chords: {
-        "C": { 
-            1: ["C4", "E4", "G4"], // 1 Chord (C Major)
-            2: ["D4", "F4", "A4"], // 2 Chord (D minor)
-            3: ["E4", "G4", "B4"], // 3 Chord (E minor)
-            4: ["F4", "A4", "C5"], // 4 Chord (F Major)
-            5: ["G4", "B4", "D5"], // 5 Chord (G Major)
-            6: ["A4", "C5", "E5"], // 6 Chord (A minor)
-            7: ["B4", "D5", "F5"]  // 7 Chord (B diminished)
+        "C": {
+            1: ["C4", "E4", "G4"],
+            2: ["D4", "F4", "A4"],
+            3: ["E4", "G4", "B4"],
+            4: ["F4", "A4", "C5"],
+            5: ["G4", "B4", "D5"],
+            6: ["A4", "C5", "E5"],
+            7: ["B4", "D5", "F5"]
         },
         "G": {
             1: ["G3", "B3", "D4"], 
@@ -37,49 +35,39 @@ const SynthEngine = {
         }
     },
 
-    // Initialize the engine (Must be called by a button click due to browser auto-play policies)
     async init() {
-        await Tone.start(); // Wakes up the browser's AudioContext
+        // Force Tone.js to resume AudioContext on user gesture if suspended
+        if (Tone.context.state !== 'running') {
+            await Tone.start();
+        }
         
-        // Create a PolySynth to handle multiple simultaneous notes (chords)
-        this.synth = new Tone.PolySynth(Tone.Synth).toDestination();
-        
-        // Soften the sound so it sounds like an electric piano, not a harsh alarm
-        this.synth.set({
-            oscillator: { type: "triangle" },
-            envelope: { attack: 0.1, decay: 0.2, sustain: 0.8, release: 1 }
-        });
-        
-        console.log("Tone.js Audio Engine Initialized");
+        // Create synthesizer if it doesn't exist yet
+        if (!this.synth) {
+            this.synth = new Tone.PolySynth(Tone.Synth).toDestination();
+            this.synth.set({
+                oscillator: { type: "triangle" },
+                envelope: { attack: 0.1, decay: 0.2, sustain: 0.8, release: 1 }
+            });
+            console.log("Tone.js Audio Engine Initialized");
+        }
     },
 
-
     playNashvilleNumber(number, musicalKey) {
-        // Debounce: If the camera sees the same number already playing, do nothing
         if (this.activeNumber === number) return;
 
-        // If the user shows 0 fingers or an invalid number, stop the audio
         if (number === 0 || !this.chords[musicalKey][number]) {
             this.stopAudio();
             return;
         }
 
-        // Stop the previous chord before playing the new one
         this.stopAudio();
-
-        // Get the array of notes (e.g., ["C4", "E4", "G4"])
         const notesToPlay = this.chords[musicalKey][number];
-        
-        // Play the chord indefinitely until stopAudio() is called
         this.synth.triggerAttack(notesToPlay);
         this.activeNumber = number;
-        
-        console.log(`Playing NNS: ${number} in Key of ${musicalKey}`);
     },
 
-    // Releases the synth's keys to fade out the audio
     stopAudio() {
-        if (this.activeNumber !== null) {
+        if (this.activeNumber !== null && this.synth) {
             this.synth.releaseAll();
             this.activeNumber = null;
         }
@@ -87,7 +75,7 @@ const SynthEngine = {
 };
 
 
-// 2. PROGRESSION PLAYBACK SEQUENCER
+// 2. PROGRESSION SEQUENCER
 
 const ProgressionSequencer = {
     sequence: null,
@@ -95,20 +83,106 @@ const ProgressionSequencer = {
 
     parseProgression(inputString) {
         return inputString
-        .replace(/\s+/g, '')
-        .trim()
-        .split(/\s+/)
-        .map(Number)
-        .filter(n => n >= 1 && n <= 7);
+            .replace(/[^1-7]/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .map(Number)
+            .filter(n => n >= 1 && n <= 7);
     },
 
     start(progressionString, musicalKey, bpm, timeSignature) {
-        this.stop(); // Stops any existing sequence before starting a new one
+        this.stop();
 
-        const progression = this.parseProgression(progressionString);
-        if (progression.length === 0) {
-            console.error("Please enter a valid progression (e.g. 6 4 1 5)");
+        const degrees = this.parseProgression(progressionString);
+        if (degrees.length === 0) {
+            alert("Please enter a valid progression using numbers 1 to 7 (e.g. 1 4 5 6).");
             return;
         }
+
+        Tone.Transport.bpm.value = parseInt(bpm, 10);
+        const [beats, beatValue] = timeSignature.split('/').map(Number);
+        Tone.Transport.timeSignature = [beats, beatValue];
+
+        this.sequence = new Tone.Sequence(
+            (time, degree) => {
+                const notes = SynthEngine.chords[musicalKey][degree];
+                if (notes && SynthEngine.synth) {
+                    SynthEngine.synth.triggerAttackRelease(notes, "1m", time);
+                    
+                    const countEl = document.getElementById('fingerCount');
+                    const chordEl = document.getElementById('chordOutput');
+                    if (countEl) countEl.innerText = degree;
+                    if (chordEl) chordEl.innerText = `${degree} Chord (${notes.join(', ')})`;
+                }
+            },
+            degrees,
+            "1m"
+        );
+
+        this.sequence.start(0);
+        Tone.Transport.start();
+        this.isPlaying = true;
+    },
+
+    stop() {
+        if (this.sequence) {
+            this.sequence.dispose();
+            this.sequence = null;
+        }
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+        SynthEngine.stopAudio();
+        this.isPlaying = false;
+
+        const chordEl = document.getElementById('chordOutput');
+        if (chordEl) chordEl.innerText = "Stopped";
     }
-}
+};
+
+
+// 3. UI EVENT LISTENERS
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Start Audio Engine Button
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.addEventListener('click', async () => {
+            await SynthEngine.init();
+            alert("Audio Engine Ready!");
+        });
+    }
+
+    // Play Progression Button
+    const playProgBtn = document.getElementById('playProgressionBtn');
+    if (playProgBtn) {
+        playProgBtn.addEventListener('click', async () => {
+            await SynthEngine.init(); // Unlocks audio before playback starts
+
+            const progressionText = document.getElementById('progressionInput')?.value || "1 4 5 6";
+            const selectedKey = document.getElementById('keySelect')?.value || "C";
+            const bpm = document.getElementById('bpmInput')?.value || 120;
+            const timeSig = document.getElementById('timeSigSelect')?.value || "4/4";
+
+            ProgressionSequencer.start(progressionText, selectedKey, bpm, timeSig);
+        });
+    }
+
+    // Stop Progression Button
+    const stopProgBtn = document.getElementById('stopProgressionBtn');
+    if (stopProgBtn) {
+        stopProgBtn.addEventListener('click', () => {
+            ProgressionSequencer.stop();
+        });
+    }
+
+    // Live Tempo adjustment
+    const bpmInput = document.getElementById('bpmInput');
+    if (bpmInput) {
+        bpmInput.addEventListener('input', (e) => {
+            const newBpm = parseInt(e.target.value, 10);
+            if (newBpm >= 40 && newBpm <= 240) {
+                Tone.Transport.bpm.value = newBpm;
+            }
+        });
+    }
+});
